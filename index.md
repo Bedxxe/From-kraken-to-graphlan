@@ -21,7 +21,10 @@ softwares:
 
 ## Recommended Setup
 
-python --version 2.7
+#Make sure that your python version is compatible with export2graphlan.py script, in my case I created an enviroment with python2.7
+#conda create --name py27 python=2.7
+#Activate the enviroment when using export2graphlan
+conda activate py27
 
 
 ## Taxonomic assignation with kraken2
@@ -460,6 +463,7 @@ Now we have a nwe folder `grap-files` and three `.png` files. Inside
   <img src="{{ page.root }}/fig/graphlan_graph.png" alt="The resulting cladogram 
   where the dominant Phyla are highlighted and the dominant Genera as well" />
 </a>
+
 <em> Figure 1. Cladogram where the dominant Phyla are highlighted 
     and the dominant Genera as well. <em/>
 
@@ -469,51 +473,231 @@ we used the flag `--external_legends` for the `graphlan.py` program.
 <a href="{{ page.root }}/fig/graphlan_graph_legend.png">
   <img src="{{ page.root }}/fig/graphlan_graph_legend.png" alt="The legend of the dominant Phyla in the main plot" />
 </a>
+
 <em> Figure 2. The legend of the dominant Phyla in the main plot. <em/>
 
 <a href="{{ page.root }}/fig/graphlan_graph_annot.png">
   <img src="{{ page.root }}/fig/graphlan_graph_annot.png" alt="Annotation of the dominan Genera" />
 </a>
+
 <em> Figure 3. Annotation of the dominan Genera. <em/>
 
 ## Adding rings to the figure
 
+Right now, we have generated a good looking plot. But an astonishing trait of 
+graphlan is the annotation rings that can be created around the cladogram. We 
+will try to generate them with the existing data. Unfortunately, the 
+manipulation of the characteristics of the final plot is not so intuitive...in a 
+sense is like really crafting a piece of art. I will show you here the way the 
+route that I used, but I imagine there are tons of them.
+Again, in the `scripts` [folder](https://github.com/Bedxxe/From-kraken-to-graphlan/tree/main/scripts) you will find the need files for generating this rings. We will 
+do it in three steps.
 
+### Assigning the ring information to all the Phyla and Genera
 
-~~~
-
-~~~
-{: .bash}
-
-~~~
-
-~~~
-{: .output}
-
-
-#Make sure that your python version is compatible with export2graphlan.py script, in my case I created an enviroment with python2.7
-#conda create --name py27 python=2.7
-#Activate the enviroment when using export2graphlan
-conda activate py27
-#Produce with the new metaphlan file the two files needed by graphlan: annotation and tree
-export2graphlan.py -i combine.mpa --annotation merged_abundance.annot.txt --tree merged_abundance.tree.txt --most_abundant 25 --annotations 3,4,5,6 --external_annotations 7 --abundance_threshold 10 --min_clade_size 5
-
-
-Aquí ontienes el dendograma que se encuentra en el archivo "merged_abundance.tree.txt".
-
-
+We will use the `get-rings.sh` script to generate the needed files to begin.
+Let's see what it is inside this little script.
 
 ~~~
-
+$ cat get-rings.sh
 ~~~
 {: .bash}
 
 ~~~
+#!/bin/sh
 
+mkdir rings-files
+
+cat grap-files/merged_abundance.annot.txt | grep p__ | grep clade_marker_size \
+| while read line; do otu=$(echo $line | cut -d' ' -f1) ; \
+value=$(echo $line | cut -d' ' -f3); \
+echo $otu"\tring_alpha\t"1"\t"$value;done > rings-files/ring1.txt
+cat grap-files/merged_abundance.annot.txt | grep g__ | grep clade_marker_size \
+| while read line; do otu=$(echo $line | cut -d' ' -f1) ; \
+value=$(echo $line | cut -d' ' -f3); \
+echo $otu"\tring_height\t"2"\t"$value;done > rings-files/ring2.txt
+
+echo New files are locates in the rings-files folder
 ~~~
 {: .output}
 
-kraken2 taxonomic assignation method by k-mers gives great results in analyzing shotgun metagenomics data. A great visualization tool for taxonomic assignation and phylogenies is graphlan. In this repository, I will describe the process of how to generate graphics with graphlan using the output from kraken2.
+By running the little script, we will have a new set of files. `ring1.txt` and 
+`ring2.txt` will have the information for the first and second ring respectively.
 
+~~~
+$ sh get-rings.sh
+$ more rings-files/ring1.txt
+~~~
+{: .bash}
 
-export2graphlan.py -i ${OUPATH}${prefix}.comb.mpa.txt -a ${OUPATH}${prefix}.annot.txt -t ${OUPATH}${prefix}.tree.txt --most_abundant 50 --annotations 2,3,4 --external_annotations 6 --abundance_threshold 10 --ftop 200
+~~~
+p__Acidobacteria        ring_alpha      1       20.0321277763
+p__Actinobacteria       ring_alpha      1       46.9110777016
+p__Bacteroidetes        ring_alpha      1       20.5406403465
+p__Chlorobi     ring_alpha      1       20.0145017817
+p__Chloroflexi  ring_alpha      1       20.0164002978
+p__Cyanobacteria        ring_alpha      1       200.0
+p__Deinococcus_Thermus  ring_alpha      1       10.0
+p__Firmicutes   ring_alpha      1       21.9076866623
+p__Fusobacteria ring_alpha      1       20.0600717798
+p__Gemmatimonadetes     ring_alpha      1       20.0127499699
+p__Planctomycetes       ring_alpha      1       20.0800518513
+p__Proteobacteria       ring_alpha      1       38.191719665
+p__Spirochaetes ring_alpha      1       20.0572668289
+p__Tenericutes  ring_alpha      1       20.0761845479
+p__Thermotogae  ring_alpha      1       20.0108880536
+p__Verrucomicrobia      ring_alpha      1       20.0197569815
+~~~
+{: .output}
+
+If we inspect what is inside `ring1.txt`, we will see a tab separated file of 4 
+columns with the Phylum identification, the ring type, the ring number and the 
+abundance value. As described in the [graphlan](https://github.com/biobakery/graphlan) repository, we need this this fourth column to have values between 
+0 and 1, we need to normalize the data.
+
+### Using R to normalize the data
+
+Now, we will use the script named `norm-rings.R` script to normalize the data.
+First, we will change the working directory of our RStudio environment into 
+the kraken-to-graphlan folder:
+~~~
+> setwd("~/kraken-to-graphlan")
+~~~
+{: .language-r}
+
+Substitute the `~` symbol for the apropiate path to access this location.
+Next, wer will define a function to normalize the data.
+~~~
+> norm1 <- function(x){(x-min(x))/(max(x)-min(x))}
+~~~
+{: .language-r}
+
+We will read the data from the file `ring1.txt` and use the defined function to 
+change the data in the fourth column *i.e.* the abundance:
+
+~~~
+> ring1 <- read.table(file = "rings-files/ring1.txt")
+> ring1$V4 <- norm1(ring1$V4)
+~~~
+{: .language-r}
+
+Finally, let's write a new object for where our normalized data will be lovated
+
+~~~
+> write.table(ring1, file = "rings-files/tring1.txt", sep ="\t" ,
+            row.names = FALSE, col.names = FALSE, quote = FALSE)
+~~~
+{: .language-r}
+
+We will do the same for the `ring2.txt` file:
+
+~~~
+> ring2 <- read.table(file = "rings-files/ring2.txt")
+> ring2$V4 <- norm1(ring2$V4)
+> write.table(ring2, file = "rings-files/tring2.txt", sep ="\t" ,
+            row.names = FALSE, col.names = FALSE, quote = FALSE)
+~~~
+{: .language-r}
+
+### Add the information to the annotation file and remade the plot
+
+For this last step, we will use two scripts: `polish.rings.sh` and 
+`final-grsafls.sh`.
+
+Let's see what it is inside `polish.rings.sh`:
+
+~~~
+$ cat polish.rings.sh
+~~~
+{: .bash}
+
+~~~
+#!/bin/sh
+
+cat grap-files/merged_abundance.annot.txt | grep p__ | grep clade_marker_size \
+| while read line; do otu=$(echo $line | cut -d' ' -f1) ; \
+value=$(echo $line | cut -d' ' -f3); \
+echo $otu"\tring_color\t"1"\t#AAAA00";done >> rings-files/tring1.txt
+
+cat rings-files/tring1.txt >> grap-files/merged_abundance.annot.txt
+cat rings-files/tring2.txt >> grap-files/merged_abundance.annot.txt
+
+echo color added to the first ring
+
+echo -e "ring_label\t"1"\tPhyla-abundance" >> grap-files/merged_abundance.annot.txt
+echo -e "ring_label\t"2"\tGenera-abundance" >> grap-files/merged_abundance.annot.txt
+
+echo Label created for the two rings in the plot
+~~~
+{: .output}
+
+The first line of code is very similar to what we saw inside the `get-rings.sh` 
+script and is used to add the color `#AAAA00` to the first ring. Then, all the 
+information from `tring1.txt` and `tring2.txt` is concatenated inside 
+`merged_abundance.annot.txt`, alongside the names for this two rings.
+
+~~~
+$ sh polish.rings.sh
+$ more rings-files/tring1.txt
+~~~
+{: .bash}
+
+~~~
+p__Acidobacteria        ring_alpha      1       0.0528006725068421
+p__Actinobacteria       ring_alpha      1       0.194268830008421
+p__Bacteroidetes        ring_alpha      1       0.0554770544552632
+p__Chlorobi     ring_alpha      1       0.0527079041142105
+p__Chloroflexi  ring_alpha      1       0.0527178963042105
+p__Cyanobacteria        ring_alpha      1       1
+p__Deinococcus_Thermus  ring_alpha      1       0
+p__Firmicutes   ring_alpha      1       0.0626720350647369
+p__Fusobacteria ring_alpha      1       0.0529477462094737
+p__Gemmatimonadetes     ring_alpha      1       0.0526986840521053
+p__Planctomycetes       ring_alpha      1       0.0530529044805263
+p__Proteobacteria       ring_alpha      1       0.148377471921053
+p__Spirochaetes ring_alpha      1       0.05293298331
+p__Tenericutes  ring_alpha      1       0.0530325502521053
+p__Thermotogae  ring_alpha      1       0.0526888844926316
+p__Verrucomicrobia      ring_alpha      1       0.0527355630605263
+p__Acidobacteria        ring_color      1       #AAAA00
+p__Actinobacteria       ring_color      1       #AAAA00
+p__Bacteroidetes        ring_color      1       #AAAA00
+p__Chlorobi     ring_color      1       #AAAA00
+p__Chloroflexi  ring_color      1       #AAAA00
+p__Cyanobacteria        ring_color      1       #AAAA00
+p__Deinococcus_Thermus  ring_color      1       #AAAA00
+p__Firmicutes   ring_color      1       #AAAA00
+p__Fusobacteria ring_color      1       #AAAA00
+p__Gemmatimonadetes     ring_color      1       #AAAA00
+p__Planctomycetes       ring_color      1       #AAAA00
+p__Proteobacteria       ring_color      1       #AAAA00
+p__Spirochaetes ring_color      1       #AAAA00
+p__Tenericutes  ring_color      1       #AAAA00
+p__Thermotogae  ring_color      1       #AAAA00
+p__Verrucomicrobia      ring_color      1       #AAAA00
+~~~
+{: .output}
+
+Finally, we will use `final-grsafls.sh` to create the plot with the rings:
+
+~~~
+$ sh final-grafla.sh
+$ ls *.png
+~~~
+{: .bash}
+
+~~~
+final_graph.png        final_graph_legend.png  graphlan_graph_annot.png
+final_graph_annot.png  graphlan_graph.png      graphlan_graph_legend.png
+~~~
+{: .output}
+
+<a href="{{ page.root }}/fig/final_graph.png">
+  <img src="{{ page.root }}/fig/final_graph.png" alt="Final Cladogram with the all 
+  the final adjustments" />
+</a>
+
+<em> Figure 4. Final Cladogram with the all the final adjustments. <em/>
+
+This took me early-mornings and nights to [grok](https://en.wikipedia.org/wiki/Grok). This is the main reason why I desired to share it 
+not only by the code, but with an explanatory document to help other fellow bioinformatician to cope with the academic life.
