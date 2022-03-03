@@ -17,9 +17,11 @@ softwares:
 | [kraken2](https://github.com/DerrickWood/kraken2) | 2.1.2 | [Link](https://github.com/DerrickWood/kraken2/blob/master/docs/MANUAL.markdown) | 
 | [krakentools](https://github.com/jenniferlu717/KrakenTools) | 1.2 | [Link](https://github.com/jenniferlu717/KrakenTools/) |
 | [graphlan](https://github.com/biobakery/graphlan) | 1.1.3 | [Link](https://huttenhower.sph.harvard.edu/graphlan/) |
+|[export2graphlan](https://github.com/SegataLab/export2graphlan) | 0.22 | [Link](https://github.com/SegataLab/export2graphlan)|
 
 ## Recommended Setup
 
+python --version 2.7
 
 
 ## Taxonomic assignation with kraken2
@@ -39,11 +41,12 @@ all your working files from that sample.
 
 In order to follow the next steps without requiring to download the reads files, I attached the resulting kraken2 reports from a set of samples from the work [Population genomics of cycad coralloid-root bacterial microbiome in contrasting environments(Unpublished)](link-to-draft) to serve as an example of the following steps.
 
-[Link to dowload the kraken2 reports](link-to-draft)
+The kraken reports for this example are located in the `reports` [folder](https://github.com/Bedxxe/From-kraken-to-graphlan/tree/main/reports) in the 
+GitHub-page
 
 ## Using krakentools
 
-After the generation of the kraken reports, Lets put everything in a folder that we will call `kraken-to-graphlan` inside any locality of your computer. Inside this folder we 
+Lets put everything in a folder that we will call `kraken-to-graphlan` inside any locality of your computer. Inside this folder we 
 will create a folder to relocate the `.report` files, we will call it `kraken-reports`. Move the reports to this new folder to end with a folder-structure as follows:
 
 
@@ -316,8 +319,9 @@ That is why we need this substraction, we need to create a new line for the miss
 Class `c__Cyanophyceae`, which will contain all the reads assigned to the phylum 
 cyanobacteria with the exception of those with the `Gloeobacteria` Class.
 So, we need to do this for each of the seven samples. Included in this repository 
-there is a file called `cyano-operations.sh`, copy it to the `mpa-files` folder. We 
-will use this program to trim our Cyanobacterial OTUs. I want to explain what some 
+there is the [folder](https://github.com/Bedxxe/From-kraken-to-graphlan/tree/main/scripts) `scripts` where the scripts that we will use are located. Inside, you 
+can find a file called `cyano-operations.sh`, move it to the `mpa-files` folder. We 
+will use this script to trim our Cyanobacterial OTUs. I want to explain what some 
 of this lines are going to do:
 
 ~~~
@@ -380,10 +384,100 @@ k__Bacteria|p__Cyanobacteria|c__Cyanophyceae|o__Gloeoemargaritales|f__Gloeomarga
 ~~~
 {: .output}
 
-## Generate the dendogram
+## Generate the plot 
 
 We will return to the above folder `kraken-to-graphlan` to proceed to the next step 
-of this tutorial. 
+of this tutorial. In the `scripts` [folder](https://github.com/Bedxxe/From-kraken-to-graphlan/tree/main/scripts) you will find a file named `grafla.sh` ,
+download it inside your `kraken-to-graphlan` folder.
+
+~~~
+$ cat grafla.sh
+~~~
+{: .bash}
+
+~~~
+#!/bin/sh
+
+mkdir grap-files
+
+export2graphlan.py --skip_rows 1,2 -i mpa-files/trim-combine.mpa --tree grap-files/merged_abundance.tree.txt \
+--annotation grap-files/merged_abundance.annot.txt --most_abundant 100 --annotations 2 \
+--external_annotations 6 --abundance_threshold 15 --ftop 1000 \
+--annotation_legend_font_size 8 --def_font_size 30
+echo Output files saved inside grap-files folder
+
+echo Color for Bacteroidetes changed from $#2d19ff to $#e6ab02
+sed 's/#2d19ff/#e6ab02/g' grap-files/merged_abundance.annot.txt > temp.txt && mv temp.txt grap-files/merged_abundance.annot.txt
+
+echo Color for Actinobacteria changed from $#29cc36 to $#e7298a
+sed 's/#29cc36/#e7298a/g' grap-files/merged_abundance.annot.txt > temp.txt && mv temp.txt grap-files/merged_abundance.annot.txt
+
+echo Color for Firmicutes changed from $#ff3333 to $#d95f03
+sed 's/#ff3333/#d95f03/g' grap-files/merged_abundance.annot.txt > temp.txt && mv temp.txt grap-files/merged_abundance.annot.txt
+
+echo Color for Cyanobacteria changed from $#00bfff to $#1b9e77
+sed 's/#00bfff/#1b9e77/g' grap-files/merged_abundance.annot.txt > temp.txt && mv temp.txt grap-files/merged_abundance.annot.txt
+
+echo Color for Bacteroidetes changed from $#00ff80 to $#7570b3
+sed 's/#00ff80/#7570b3/g' grap-files/merged_abundance.annot.txt > temp.txt && mv temp.txt grap-files/merged_abundance.annot.txt
+
+
+graphlan_annotate.py --annot grap-files/merged_abundance.annot.txt grap-files/merged_abundance.tree.txt grap-files/merged_abundance.xml
+
+echo Generating the .png file
+graphlan.py --dpi 300 --size 10 grap-files/merged_abundance.xml graphlan_graph.png --external_legends
+~~~
+{: .output}
+
+All the inital parameters from the `export2graphlan.py` can be found in its GitHub 
+[repository](https://github.com/SegataLab/export2graphlan). This programm gives a 
+predertermined set of colors to highlight the most abundant OTUs at different 
+taxonomic level. This can be changed by different ways, but the option that I am 
+showing here changes also the colors of all the highlighted OTUs inside the 
+dominant Phyla. This changes must be done in the `merged_abundance.annot.txt` file. 
+So the lines of code that beggin with the function `sed`, are changing the default 
+colors. As posted in [graphlan](https://github.com/biobakery/graphlan) repository, 
+the last four lines of code generate a `.xml` file that will dictate the 
+instructions for `graphlan.py` to generate the cladogram `graphlan_graph.png`.
+
+Let's run it and see the new files that this will generate:
+
+~~~
+$ sh grafla.sh
+$ ls
+~~~
+{: .bash}
+
+~~~
+
+~~~
+{: .output}
+
+Now we have a nwe folder `grap-files` and three `.png` files. Inside 
+`graphlan_graph.png` is the desired plot.
+
+<a href="{{ page.root }}/fig/graphlan_graph.png">
+  <img src="{{ page.root }}/fig/graphlan_graph.png" alt="The resulting cladogram 
+  where the dominant Phyla are highlighted and the dominant Genera as well" />
+</a>
+<em> Figure 1. Cladogram where the dominant Phyla are highlighted 
+    and the dominant Genera as well. <em/>
+
+Inside the other two `.png` files we will find the legend and annotation of the highlighted Phyla and Genera respectively. This is delivered in this way because 
+we used the flag `--external_legends` for the `graphlan.py` program.
+
+<a href="{{ page.root }}/fig/graphlan_graph_legend.png">
+  <img src="{{ page.root }}/fig/graphlan_graph_legend.png" alt="The legend of the dominant Phyla in the main plot" />
+</a>
+<em> Figure 2. The legend of the dominant Phyla in the main plot. <em/>
+
+<a href="{{ page.root }}/fig/graphlan_graph_annot.png">
+  <img src="{{ page.root }}/fig/graphlan_graph_annot.png" alt="Annotation of the dominan Genera" />
+</a>
+<em> Figure 3. Annotation of the dominan Genera. <em/>
+
+## Adding rings to the figure
+
 
 
 ~~~
