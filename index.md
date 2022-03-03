@@ -7,7 +7,7 @@ source: md
 # From kraken to graphlan
 
 I got enthralled by figures representing metagenomic taxonomic assignation and phylogenies using graphlan. During my master's degree research project, I tried different taxonomic
-assignation programs (one of them was metaphlan), but the one that gave me the best results was kraken. After reading a little bit and trying to find a way to traduce my kraken 
+assignation programs (one of them was MetaPhlAn), but the one that gave me the best results was kraken. After reading a little bit and trying to find a way to traduce my kraken 
 output to work with graphlan I found a way to generate this good-looking figures using the kraken output. In order to obtain this desired results we will use the next set of 
 softwares:
 
