@@ -687,7 +687,7 @@ final_graph_annot.png  graphlan_graph.png      graphlan_graph_legend.png
 
 ![image](https://user-images.githubusercontent.com/67386612/156510904-53800f16-391c-451b-a5cd-33a5368eff36.png)
 
-<em> Figure 4. Final Cladogram with the all the final adjustments. <em/>
+<em> Figure 4. Final Cladogram with all the final adjustments. <em/>
 
 This took me early-mornings and nights to [grok](https://en.wikipedia.org/wiki/Grok). This is the main reason why I desired to share it 
 not only by the code, but with an explanatory document to help other fellow bioinformatician to cope with the academic life.
