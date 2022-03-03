@@ -691,10 +691,8 @@ final_graph_annot.png  graphlan_graph.png      graphlan_graph_legend.png
 ~~~
 {: .output}
 
-<a href="fig/final_graph.png">
-  <img src="fig/final_graph.png" alt="Final Cladogram with the all 
-  the final adjustments" />
-</a>
+
+<img src="fig/final_graph.png" alt="Final Cladogram with the all the final adjustments" />
 
 <em> Figure 4. Final Cladogram with the all the final adjustments. <em/>
 
