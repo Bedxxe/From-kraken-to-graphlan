@@ -458,10 +458,7 @@ $ ls
 Now we have a nwe folder `grap-files` and three `.png` files. Inside 
 `graphlan_graph.png` is the desired plot.
 
-<a href="{{ page.root }}/fig/graphlan_graph.png">
-  <img src="{{ page.root }}/fig/graphlan_graph.png" alt="The resulting cladogram 
-  where the dominant Phyla are highlighted and the dominant Genera as well" />
-</a>
+![image](https://user-images.githubusercontent.com/67386612/156511212-7c443d32-5434-4bc3-96f3-354075665866.png)
 
 <em> Figure 1. Cladogram where the dominant Phyla are highlighted 
     and the dominant Genera as well. <em/>
@@ -469,15 +466,11 @@ Now we have a nwe folder `grap-files` and three `.png` files. Inside
 Inside the other two `.png` files we will find the legend and annotation of the highlighted Phyla and Genera respectively. This is delivered in this way because 
 we used the flag `--external_legends` for the `graphlan.py` program.
 
-<a href="{{ page.root }}/fig/graphlan_graph_legend.png">
-  <img src="{{ page.root }}/fig/graphlan_graph_legend.png" alt="The legend of the dominant Phyla in the main plot" />
-</a>
+![graphlan_graph_legend](https://user-images.githubusercontent.com/67386612/156511311-41f0d062-6549-4af0-b948-2c22f4f34d56.png)
 
 <em> Figure 2. The legend of the dominant Phyla in the main plot. <em/>
 
-<a href="{{ page.root }}/fig/graphlan_graph_annot.png">
-  <img src="{{ page.root }}/fig/graphlan_graph_annot.png" alt="Annotation of the dominan Genera" />
-</a>
+![graphlan_graph_annot](https://user-images.githubusercontent.com/67386612/156511285-f09f189d-b7b1-4530-b144-83bbb84933f7.png)
 
 <em> Figure 3. Annotation of the dominan Genera. <em/>
 
@@ -601,7 +594,7 @@ We will do the same for the `ring2.txt` file:
 ### Add the information to the annotation file and remade the plot
 
 For this last step, we will use two scripts: `polish.rings.sh` and 
-`final-grsafls.sh`.
+`final-grafla.sh`.
 
 Let's see what it is inside `polish.rings.sh`:
 
@@ -677,7 +670,7 @@ p__Verrucomicrobia      ring_color      1       #AAAA00
 ~~~
 {: .output}
 
-Finally, we will use `final-grsafls.sh` to create the plot with the rings:
+Finally, we will use `final-grafla.sh` to create the plot with the rings:
 
 ~~~
 $ sh final-grafla.sh
@@ -692,7 +685,7 @@ final_graph_annot.png  graphlan_graph.png      graphlan_graph_legend.png
 {: .output}
 
 
-<img src="fig/final_graph.png" alt="Final Cladogram with the all the final adjustments" />
+![image](https://user-images.githubusercontent.com/67386612/156510904-53800f16-391c-451b-a5cd-33a5368eff36.png)
 
 <em> Figure 4. Final Cladogram with the all the final adjustments. <em/>
 
